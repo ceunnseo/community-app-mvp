@@ -98,7 +98,7 @@ function App(): React.JSX.Element {
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false,
-          gestureEnabled: false 
+          gestureEnabled: true,
         }}
       >
         {user ? (
