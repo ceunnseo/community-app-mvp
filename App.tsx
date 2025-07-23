@@ -1,24 +1,76 @@
+// App.tsx
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 // 화면 컴포넌트들
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import PostListScreen from './src/screens/PostListScreen';
+import CreatePostScreen from './src/screens/CreatePostScreen';
+import PostDetailScreen from './src/screens/PostDetailScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
 
-// 네비게이션 타입 정의
+// 타입 정의
 export type RootStackParamList = {
   Login: undefined;
-  Home: undefined;
+  Main: undefined;
+  CreatePost: undefined;
+  PostDetail: { postId: string };
+};
+
+export type MainTabParamList = {
+  PostList: undefined;
+  Profile: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+
+// 메인 탭 네비게이터
+function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: string;
+
+          if (route.name === 'PostList') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          } else {
+            iconName = 'help';
+          }
+
+          return <Icon name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#4285F4',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen 
+        name="PostList" 
+        component={PostListScreen} 
+        options={{ title: '홈' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ title: '프로필' }}
+      />
+    </Tab.Navigator>
+  );
+}
 
 function App(): React.JSX.Element {
-  const [isReady, setIsReady] = useState<boolean>(false);
+  const [initializing, setInitializing] = useState<boolean>(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
 
   useEffect(() => {
@@ -33,21 +85,13 @@ function App(): React.JSX.Element {
     const subscriber = auth().onAuthStateChanged((user) => {
       console.log('Auth state changed:', user?.email || 'No user');
       setUser(user);
-      setIsReady(true);
+      setInitializing(false);
     });
 
-    // 초기 상태 확인
-    setTimeout(() => {
-      if (!isReady) {
-        console.log('Forcing ready state');
-        setIsReady(true);
-      }
-    }, 2000);
-
-    return () => subscriber();
+    return subscriber;
   }, []);
 
-   if (!isReady) return <LoadingScreen />;
+  if (initializing) return <LoadingScreen />;
 
   return (
     <NavigationContainer>
@@ -58,7 +102,30 @@ function App(): React.JSX.Element {
         }}
       >
         {user ? (
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <>
+            <Stack.Screen name="Main" component={MainTabNavigator} />
+            <Stack.Screen 
+              name="CreatePost" 
+              component={CreatePostScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '새 게시글',
+                headerStyle: { backgroundColor: '#fff' },
+                headerTintColor: '#000',
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen 
+              name="PostDetail" 
+              component={PostDetailScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '게시글',
+                headerStyle: { backgroundColor: '#fff' },
+                headerTintColor: '#000',
+              }}
+            />
+          </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
