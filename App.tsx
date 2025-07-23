@@ -1,57 +1,70 @@
-import React, { useEffect } from 'react';
-import { View, Button, Text, StyleSheet } from 'react-native';
-import auth from '@react-native-firebase/auth'; // 만약 Firebase Auth 쓰는 경우
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-function App() {
+// 화면 컴포넌트들
+import LoginScreen from './src/screens/LoginScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import LoadingScreen from './src/screens/LoadingScreen';
+
+// 네비게이션 타입 정의
+export type RootStackParamList = {
+  Login: undefined;
+  Home: undefined;
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
+
+function App(): React.JSX.Element {
+  const [isReady, setIsReady] = useState<boolean>(false);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+
   useEffect(() => {
+    // Google Sign-In 설정
     GoogleSignin.configure({
-      webClientId: '618186988259-5elbgdr0b178if9nmhafa24fk66dhadu.apps.googleusercontent.com', // Firebase 콘솔에서 복사 (iOS용 아님!)
+      webClientId: '618186988259-5elbgdr0b178if9nmhafa24fk66dhadu.apps.googleusercontent.com',
       iosClientId: '618186988259-p8qtl1lhgjhiq8utmpfoqtrj24jb62al.apps.googleusercontent.com',
       offlineAccess: true,
     });
+
+    // 인증 상태 변화 감지
+    const subscriber = auth().onAuthStateChanged((user) => {
+      console.log('Auth state changed:', user?.email || 'No user');
+      setUser(user);
+      setIsReady(true);
+    });
+
+    // 초기 상태 확인
+    setTimeout(() => {
+      if (!isReady) {
+        console.log('Forcing ready state');
+        setIsReady(true);
+      }
+    }, 2000);
+
+    return () => subscriber();
   }, []);
 
-  const signInWithGoogle = async () => {
-    try {
-      await GoogleSignin.signOut();
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      // 로그인
-      const userInfo = await GoogleSignin.signIn();
-      console.log('🧪 전체 userInfo:', userInfo);
-      console.log('🧪 userInfo.data:', userInfo.data.idToken);
-      console.log('🧪 idToken:', userInfo.idToken);
-      const googleCredential = auth.GoogleAuthProvider.credential(userInfo.data.idToken);
-      await auth().signInWithCredential(googleCredential);
-      console.log('✅ 로그인 성공');
-    } catch (error) {
-      console.log('❌ 로그인 실패:', error);
-      console.log('❌ 로그인 실패 코드:', error.code);
-      console.log('❌ 로그인 실패 메세지:', error.message);
-      console.log('❌ 로그인 실패 전체:', JSON.stringify(error));
-      console.error('❌ 로그인 실패:', error.code, error.message);
-    }
-  };
+   if (!isReady) return <LoadingScreen />;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Google 로그인 테스트!</Text>
-      <Button title="Google로 로그인" onPress={signInWithGoogle} />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+          gestureEnabled: false 
+        }}
+      >
+        {user ? (
+          <Stack.Screen name="Home" component={HomeScreen} />
+        ) : (
+          <Stack.Screen name="Login" component={LoginScreen} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  title: {
-    fontSize: 18,
-    marginBottom: 20,
-    color : '#ffffff',
-  },
-});
 
 export default App;
