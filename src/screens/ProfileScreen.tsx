@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   Image,
@@ -11,9 +10,13 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Header from '../components/Header';
 import Button from '../components/Button';
+import { clearAllListeners } from '../utils/listenerManager';
+import { useAuth } from '../hooks/useAuth';
+
 
 const ProfileScreen: React.FC = () => {
   const user = auth().currentUser;
+  const { logout } = useAuth();
 
   const confirmLogout = () => {
     Alert.alert(
@@ -29,9 +32,7 @@ const ProfileScreen: React.FC = () => {
 
   const handleLogout = async (): Promise<void> => {
     try {
-      await GoogleSignin.signOut();
-      await auth().signOut();
-      console.log('✅ 로그아웃 성공');
+      await logout();
     } catch (error) {
       console.error('❌ 로그아웃 실패:', error);
       Alert.alert('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.');

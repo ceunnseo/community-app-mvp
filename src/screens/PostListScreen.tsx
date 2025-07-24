@@ -12,7 +12,7 @@ import {
 import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { addListener } from '../utils/listenerManager';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Post } from '../types';
@@ -71,7 +71,7 @@ const PostListScreen: React.FC = () => {
           setLoading(false);
         }
       );
-
+      addListener(unsubscribe);
     return () => unsubscribe();
   }, []);
 

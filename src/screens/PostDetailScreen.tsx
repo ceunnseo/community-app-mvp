@@ -25,6 +25,7 @@ import { RootStackParamList } from '../../App';
 import Header from '../components/Header';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { addListener } from '../utils/listenerManager';
 
 type RouteParams = RouteProp<RootStackParamList, 'PostDetail'>;
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -184,11 +185,9 @@ const handleMenuPress = () => {
           setLoading(false);
         }
       );
+    addListener(unsubscribe);
 
-    return () => {
-      console.log('게시글 구독 해제');
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [postId, navigation]);
 
   // 댓글 실시간 구독
@@ -228,11 +227,9 @@ const handleMenuPress = () => {
           console.error('댓글 구독 실패:', error);
         }
       );
+    addListener(unsubscribe);
 
-    return () => {
-      console.log('댓글 구독 해제');
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [postId, post]);
 
   const formatDate = (timestamp: any) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { clearAllListeners } from '../utils/listenerManager'; 
 
 /* ───────── 타입 ───────── */
 export interface AuthContext {
@@ -72,7 +73,7 @@ export const useAuth = (): AuthContext => {
     try {
       setLoading(true);
       setError(null);
-
+      clearAllListeners();
       await GoogleSignin.signOut();
       await auth().signOut();
     } catch (e) {
