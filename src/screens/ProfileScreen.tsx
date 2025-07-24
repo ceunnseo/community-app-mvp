@@ -15,6 +15,18 @@ import Button from '../components/Button';
 const ProfileScreen: React.FC = () => {
   const user = auth().currentUser;
 
+  const confirmLogout = () => {
+    Alert.alert(
+      '로그아웃',
+      '정말 로그아웃 하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '로그아웃', style: 'destructive', onPress: handleLogout },
+      ],
+      { cancelable: true },
+    );
+  };
+
   const handleLogout = async (): Promise<void> => {
     try {
       await GoogleSignin.signOut();
@@ -51,7 +63,7 @@ const ProfileScreen: React.FC = () => {
       <View style={styles.menuSection}>
         <Button
           label="로그아웃"
-          onPress={handleLogout}
+          onPress={confirmLogout}
           backgroundColor="#DB4437"
         />
       </View>
