@@ -9,16 +9,15 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-			<string>com.googleusercontent.apps.618186988259-p8qtl1lhgjhiq8utmpfoqtrj24jb62al</string>
+				<string>com.googleusercontent.apps.618186988259-p8qtl1lhgjhiq8utmpfoqtrj24jb62al</string>
 			</array>
 		</dict>
 	</array>
 	<key>LSApplicationQueriesSchemes</key>
-		<array>
-			<string>google</string>
-			<string>com.googleusercontent.apps.618186988259-p8qtl1lhgjhiq8utmpfoqtrj24jb62al</string>
-		</array>
-
+	<array>
+		<string>google</string>
+		<string>com.googleusercontent.apps.618186988259-p8qtl1lhgjhiq8utmpfoqtrj24jb62al</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
@@ -49,7 +48,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -66,6 +65,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	
+	<key>UIAppFonts</key>
+	<array>
+		<string>EvilIcons.ttf</string>
+		<string>FontAwesome6_Brands.ttf</string>
+		<string>FontAwesome6_Regular.ttf</string>
+		<string>FontAwesome6_Solid.ttf</string>
+	</array>
 </dict>
 </plist>
