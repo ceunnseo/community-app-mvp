@@ -5,11 +5,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import Icon from 'react-native-vector-icons/Ionicons';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
+
+
 
 // 화면 컴포넌트들
 import LoginScreen from './src/screens/LoginScreen';
-import HomeScreen from './src/screens/HomeScreen';
 import PostListScreen from './src/screens/PostListScreen';
 import CreatePostScreen from './src/screens/CreatePostScreen';
 import PostDetailScreen from './src/screens/PostDetailScreen';
@@ -20,7 +21,10 @@ import LoadingScreen from './src/screens/LoadingScreen';
 export type RootStackParamList = {
   Login: undefined;
   Main: undefined;
-  CreatePost: undefined;
+  CreatePost: { 
+    mode?: 'create' | 'edit';  // 선택적 파라미터
+    postId?: string;           // 수정 모드일 때만 필요
+  };
   PostDetail: { postId: string };
 };
 
@@ -41,14 +45,14 @@ function MainTabNavigator() {
           let iconName: string;
 
           if (route.name === 'PostList') {
-            iconName = focused ? 'home' : 'home-outline';
+             iconName = 'house';
           } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+             iconName = 'user';
           } else {
             iconName = 'help';
           }
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return <FontAwesome6 name={iconName} size={size} color={color} solid />;
         },
         tabBarActiveTintColor: '#4285F4',
         tabBarInactiveTintColor: 'gray',

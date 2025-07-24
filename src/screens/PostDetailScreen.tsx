@@ -109,10 +109,14 @@ const handleMenuPress = () => {
   };
 
   const handleEdit = () => {
-    Alert.alert('준비 중', '수정 기능은 준비 중입니다.');
-    // TODO: 수정 화면으로 이동
-    // navigation.navigate('EditPost', { postId: post.id });
-  };
+  if (!post) return;
+  
+  // CreatePost 화면으로 이동하면서 수정 모드와 postId 전달
+  navigation.navigate('CreatePost', { 
+    mode: 'edit', 
+    postId: post.id 
+  });
+};
 
   const handleDelete = () => {
     Alert.alert(
@@ -159,34 +163,43 @@ const handleMenuPress = () => {
     );
   };
 
+  const handleShare = () => {
+    Alert.alert('준비 중', '공유 기능은 준비 중입니다.');
+    // TODO: 실제 공유 기능 구현
+  };
 
-  // 게시글 가져오기
+  // 게시글 실시간 구독
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const postDoc = await firestore()
-          .collection('posts')
-          .doc(postId)
-          .get();
-
-        if (postDoc.exists) {
-          setPost({
-            id: postDoc.id,
-            ...postDoc.data(),
-          } as Post);
-        } else {
-          Alert.alert('오류', '게시글을 찾을 수 없습니다.');
-          navigation.goBack();
+    console.log('게시글 구독 시작, postId:', postId);
+    
+    const unsubscribe = firestore()
+      .collection('posts')
+      .doc(postId)
+      .onSnapshot(
+        (doc) => {
+          if (doc.exists) {
+            setPost({
+              id: doc.id,
+              ...doc.data(),
+            } as Post);
+            console.log('게시글 업데이트됨');
+          } else {
+            Alert.alert('오류', '게시글을 찾을 수 없습니다.');
+            navigation.goBack();
+          }
+          setLoading(false);
+        },
+        (error) => {
+          console.error('게시글 구독 실패:', error);
+          Alert.alert('오류', '게시글을 불러올 수 없습니다.');
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('게시글 로드 실패:', error);
-        Alert.alert('오류', '게시글을 불러올 수 없습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
 
-    fetchPost();
+    return () => {
+      console.log('게시글 구독 해제');
+      unsubscribe();
+    };
   }, [postId, navigation]);
 
   // 댓글 실시간 구독
@@ -406,6 +419,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  headerButton: {
+    padding: 8,
   },
   loadingContainer: {
     flex: 1,

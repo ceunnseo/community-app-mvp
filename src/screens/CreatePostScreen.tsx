@@ -1,32 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
+  ScrollView,
+  Image,
   Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  ActivityIndicator,
-  Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
 import auth from '@react-native-firebase/auth';
+import Icon from 'react-native-vector-icons/Ionicons';
+import ImagePicker from 'react-native-image-crop-picker';
+import { Post } from '../types';
 import { RootStackParamList } from '../../App';
 import Header from '../components/Header';
 
+type RouteParams = RouteProp<RootStackParamList, 'CreatePost'>;
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const CreatePostScreen: React.FC = () => {
+  const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
-  const [content, setContent] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  
+  // 수정 모드인지 확인
+  const isEditMode = route.params?.mode === 'edit';
+  const postId = route.params?.postId;
+  
+  const [content, setContent] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(isEditMode);
+  const [submitting, setSubmitting] = useState(false);
   
   const user = auth().currentUser;
+
+  // 수정 모드일 때 기존 게시글 데이터 불러오기
+  useEffect(() => {
+    if (isEditMode && postId) {
+      fetchPost();
+    }
+  }, [isEditMode, postId]);
+
+  const fetchPost = async () => {
+    try {
+      const postDoc = await firestore()
+        .collection('posts')
+        .doc(postId)
+        .get();
+
+      if (postDoc.exists) {
+        const postData = {
+          id: postDoc.id,
+          ...postDoc.data(),
+        } as Post;
+
+        // 작성자 확인
+        if (postData.authorId !== user?.uid) {
+          Alert.alert('오류', '수정 권한이 없습니다.');
+          navigation.goBack();
+          return;
+        }
+
+        setContent(postData.content);
+        setExistingImages(postData.imageURLs || []);
+      } else {
+        Alert.alert('오류', '게시글을 찾을 수 없습니다.');
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error('게시글 로드 실패:', error);
+      Alert.alert('오류', '게시글을 불러올 수 없습니다.');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeImage = (index: number, isExisting: boolean = false) => {
+    if (isExisting) {
+      const imageToRemove = existingImages[index];
+      setRemovedImages([...removedImages, imageToRemove]);
+    } else {
+      const newImages = [...images];
+      newImages.splice(index, 1);
+      setImages(newImages);
+    }
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    const uploadPromises = images.map(async (imagePath, index) => {
+      const filename = `posts/${user?.uid}/${Date.now()}_${index}.jpg`;
+      const reference = storage().ref(filename);
+      
+      await reference.putFile(imagePath);
+      const url = await reference.getDownloadURL();
+      return url;
+    });
+
+    return Promise.all(uploadPromises);
+  };
+
+  const deleteRemovedImages = async () => {
+    const deletePromises = removedImages.map(async (imageUrl) => {
+      try {
+        const reference = storage().refFromURL(imageUrl);
+        await reference.delete();
+      } catch (error) {
+        console.error('이미지 삭제 실패:', error);
+      }
+    });
+
+    await Promise.all(deletePromises);
+  };
 
   const handleSubmit = async () => {
     if (!content.trim()) {
@@ -39,113 +133,150 @@ const CreatePostScreen: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
 
     try {
-      // Firestore에 게시글 저장
-      await firestore().collection('posts').add({
-        authorId: user.uid,
-        authorName: user.displayName || '익명',
-        authorPhotoURL: user.photoURL || null,
-        content: content.trim(),
-        imageURLs: [],
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-        commentCount: 0,
-      });
-
-      console.log('✅ 게시글 작성 성공');
+      // 새 이미지 업로드
+      const newImageUrls = await uploadImages();
       
-      // 성공 후 이전 화면으로 돌아가기
-      navigation.goBack();
-      
-      // 약간의 지연 후 성공 메시지 표시
-      setTimeout(() => {
-        Alert.alert('성공', '게시글이 작성되었습니다.');
-      }, 100);
+      if (isEditMode) {
+        // 수정 모드: 삭제된 이미지 제거
+        await deleteRemovedImages();
+        
+        // 최종 이미지 URL 리스트
+        const finalImageUrls = [
+          ...existingImages.filter(url => !removedImages.includes(url)),
+          ...newImageUrls,
+        ];
 
+        // 게시글 업데이트
+        await firestore()
+          .collection('posts')
+          .doc(postId)
+          .update({
+            content: content.trim(),
+            imageURLs: finalImageUrls,
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          });
+
+        Alert.alert('성공', '게시글이 수정되었습니다.', [
+          {
+            text: '확인',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        // 생성 모드: 새 게시글 생성
+        const postData = {
+          authorId: user.uid,
+          authorName: user.displayName || '익명',
+          authorPhotoURL: user.photoURL || null,
+          content: content.trim(),
+          imageURLs: newImageUrls,
+          likeCount: 0,
+          commentCount: 0,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        };
+
+        await firestore().collection('posts').add(postData);
+
+        Alert.alert('성공', '게시글이 작성되었습니다.', [
+          {
+            text: '확인',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      }
     } catch (error) {
-      console.error('❌ 게시글 작성 실패:', error);
-      Alert.alert('오류', '게시글 작성에 실패했습니다. 다시 시도해주세요.');
+      console.error(`게시글 ${isEditMode ? '수정' : '작성'} 실패:`, error);
+      Alert.alert('오류', `게시글 ${isEditMode ? '수정' : '작성'}에 실패했습니다.`);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4285F4" />
+      </View>
+    );
+  }
+
+  const displayedExistingImages = existingImages.filter(url => !removedImages.includes(url));
 
   return (
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header title = "새 게시글" leftIcon = {'arrow-left'} onLeftPress = {() => navigation.goBack()} rightIcon = {'checkmark'} onRightPress={handleSubmit} disableTopInset/>
-      {/*<View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-          disabled={loading}
-        >
-          <Text style={styles.cancelText}>취소</Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>새 게시글</Text>
-        
-        <TouchableOpacity 
-          style={[
-            styles.submitButton,
-            (!content.trim() || loading) && styles.submitButtonDisabled
-          ]}
-          onPress={handleSubmit}
-          disabled={!content.trim() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={[
-              styles.submitText,
-              (!content.trim() || loading) && styles.submitTextDisabled
-            ]}>
-              게시
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>*/}
+      <Header 
+        title={isEditMode ? "게시글 수정" : "새 게시글"} 
+        leftIcon="arrow-left" 
+        onLeftPress={() => navigation.goBack()} 
+        rightIcon="checkmark" 
+        onRightPress={handleSubmit}
+        rightDisabled={submitting || !content.trim()}
+        disableTopInset
+      />
 
-      <ScrollView 
-        style={styles.contentContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.authorInfo}>
-          {user?.photoURL ? (
-            <Image 
-              source={{ uri: user.photoURL }} 
-              style={styles.authorPhoto}
-            />
-          ) : (
-            <View style={styles.authorPhotoPlaceholder}>
-              <Text style={styles.authorPhotoText}>
-                {user?.displayName?.[0] || '?'}
-              </Text>
-            </View>
-          )}
-          <Text style={styles.authorName}>{user?.displayName || '익명'}</Text>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.contentContainer}>
+          <TextInput
+            style={styles.contentInput}
+            placeholder="내용을 입력하세요..."
+            placeholderTextColor="#999"
+            value={content}
+            onChangeText={setContent}
+            multiline
+            textAlignVertical="top"
+            autoFocus={!isEditMode}
+            editable={!submitting}
+          />
+
+          {/* 이미지 섹션 */}
+          <View style={styles.imageSection}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {/* 기존 이미지 (수정 모드에서만) */}
+              {isEditMode && displayedExistingImages.map((url, index) => (
+                <View key={`existing-${index}`} style={styles.imageWrapper}>
+                  <Image source={{ uri: url }} style={styles.imagePreview} />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => removeImage(index, true)}
+                    disabled={submitting}
+                  >
+                    <Icon name="close-circle" size={24} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              {/* 새로 추가한 이미지 */}
+              {images.map((uri, index) => (
+                <View key={`new-${index}`} style={styles.imageWrapper}>
+                  <Image source={{ uri }} style={styles.imagePreview} />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => removeImage(index, false)}
+                    disabled={submitting}
+                  >
+                    <Icon name="close-circle" size={24} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </View>
-
-        <TextInput
-          style={styles.textInput}
-          placeholder="무슨 생각을 하고 계신가요?"
-          placeholderTextColor="#999"
-          value={content}
-          onChangeText={setContent}
-          multiline
-          autoFocus
-          editable={!loading}
-          maxLength={500}
-        />
-
-        <Text style={styles.charCount}>
-          {content.length} / 500
-        </Text>
       </ScrollView>
+
+      {submitting && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#4285F4" />
+          <Text style={styles.loadingText}>
+            {isEditMode ? '수정 중...' : '게시 중...'}
+          </Text>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -155,93 +286,74 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  cancelButton: {
-    padding: 5,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  submitButton: {
-    backgroundColor: '#4285F4',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  submitTextDisabled: {
-    color: '#999',
-  },
-  contentContainer: {
+  loadingContainer: {
     flex: 1,
-    padding: 15,
-  },
-  authorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  authorPhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    marginRight: 10,
-  },
-  authorPhotoPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#4285F4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    backgroundColor: '#fff',
   },
-  authorPhotoText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  scrollView: {
+    flex: 1,
   },
-  authorName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+  contentContainer: {
+    padding: 15,
   },
-  textInput: {
+  contentInput: {
     fontSize: 16,
     color: '#333',
     lineHeight: 24,
     minHeight: 200,
-    textAlignVertical: 'top',
+    marginBottom: 20,
   },
-  charCount: {
-    textAlign: 'right',
-    color: '#999',
-    fontSize: 14,
+  imageSection: {
     marginTop: 10,
+  },
+  imageWrapper: {
+    marginRight: 10,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  addImageButton: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#4285F4',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+  },
+  addImageText: {
+    marginTop: 5,
+    fontSize: 12,
+    color: '#4285F4',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
 });
 
