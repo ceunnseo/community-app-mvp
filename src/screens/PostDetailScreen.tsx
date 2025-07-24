@@ -213,15 +213,7 @@ const handleMenuPress = () => {
           });
           
           setComments(fetchedComments);
-          
-          // 댓글 수 업데이트
-          if (post) {
-            firestore()
-              .collection('posts')
-              .doc(postId)
-              .update({ commentCount: fetchedComments.length })
-              .catch(console.error);
-          }
+        
         },
         error => {
           console.error('댓글 구독 실패:', error);

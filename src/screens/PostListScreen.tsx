@@ -113,12 +113,6 @@ const PostListScreen: React.FC = () => {
         <Image source={{ uri: item.imageURLs[0] }} style={styles.postImage} />
       )}
 
-      <View style={styles.postFooter}>
-        <TouchableOpacity style={styles.footerButton}>
-          <FontAwesome6 name="comment" size={20} color="#666" />
-          <Text style={styles.footerButtonText}>{item.commentCount || 0}</Text>
-        </TouchableOpacity>
-      </View>
     </TouchableOpacity>
   );
 
