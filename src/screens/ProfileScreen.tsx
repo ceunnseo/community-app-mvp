@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import Header from '../components/Header';
 
 const ProfileScreen: React.FC = () => {
   const user = auth().currentUser;
@@ -26,9 +27,7 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>프로필</Text>
-      </View>
+      <Header title = "프로필"/>
 
       <View style={styles.profileSection}>
         {user?.photoURL ? (

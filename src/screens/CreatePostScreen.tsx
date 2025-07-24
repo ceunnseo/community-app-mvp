@@ -17,6 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { RootStackParamList } from '../../App';
+import Header from '../components/Header';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -76,7 +77,8 @@ const CreatePostScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.header}>
+      <Header title = "새 게시글" leftIcon = {'arrow-left'} onLeftPress = {() => navigation.goBack()} rightIcon = {'checkmark'} onRightPress={handleSubmit} disableTopInset/>
+      {/*<View style={styles.header}>
         <TouchableOpacity 
           style={styles.cancelButton}
           onPress={() => navigation.goBack()}
@@ -106,7 +108,7 @@ const CreatePostScreen: React.FC = () => {
             </Text>
           )}
         </TouchableOpacity>
-      </View>
+      </View>*/}
 
       <ScrollView 
         style={styles.contentContainer}

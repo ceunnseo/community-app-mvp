@@ -108,7 +108,7 @@ function App(): React.JSX.Element {
               name="CreatePost" 
               component={CreatePostScreen}
               options={{
-                headerShown: true,
+                headerShown: false,
                 headerTitle: '새 게시글',
                 headerStyle: { backgroundColor: '#fff' },
                 headerTintColor: '#000',
@@ -119,10 +119,10 @@ function App(): React.JSX.Element {
               name="PostDetail" 
               component={PostDetailScreen}
               options={{
-                headerShown: true,
-                headerTitle: '게시글',
-                headerStyle: { backgroundColor: '#fff' },
-                headerTintColor: '#000',
+                headerShown: false,
+                //headerTitle: '게시글~',
+                //headerStyle: { backgroundColor: '#fff' },
+                //headerTintColor: '#000',
               }}
             />
           </>

@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Post, Comment } from '../types';
 import { RootStackParamList } from '../../App';
-
+import Header from '../components/Header';
 
 type RouteParams = RouteProp<RootStackParamList, 'PostDetail'>;
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -314,6 +314,7 @@ const handleMenuPress = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <Header title = "게시글" leftIcon = {'arrow-left'} onLeftPress = {() => navigation.goBack()} rightIcon = {'ellipsis-horizontal'} onRightPress={handleMenuPress}/>
         
       <FlatList
         data={comments}

@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Post } from '../types';
 import { RootStackParamList } from '../../App';
+import Header from '../components/Header';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -130,16 +131,7 @@ const PostListScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>커뮤니티</Text>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => navigation.navigate('CreatePost')}
-        >
-          <Icon name="create-outline" size={24} color="#4285F4" />
-        </TouchableOpacity>
-      </View>
-
+      <Header title = "커뮤니티" rightIcon = {'create-outline'} onRightPress={() => navigation.navigate('CreatePost')}/>
       <FlatList
         data={posts}
         renderItem={renderPost}
