@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   Image,
@@ -12,6 +11,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import Button from '../components/Button';
+import { useAuth } from '../hooks/useAuth';
 
 type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;
 
