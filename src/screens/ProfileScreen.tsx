@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import Header from '../components/Header';
+import Button from '../components/Button';
 
 const ProfileScreen: React.FC = () => {
   const user = auth().currentUser;
@@ -26,9 +28,7 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>프로필</Text>
-      </View>
+      <Header title = "프로필"/>
 
       <View style={styles.profileSection}>
         {user?.photoURL ? (
@@ -49,9 +49,11 @@ const ProfileScreen: React.FC = () => {
       </View>
 
       <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>로그아웃</Text>
-        </TouchableOpacity>
+        <Button
+          label="로그아웃"
+          onPress={handleLogout}
+          backgroundColor="#DB4437"
+        />
       </View>
     </View>
   );
