@@ -213,7 +213,6 @@ const handleMenuPress = () => {
           });
           
           setComments(fetchedComments);
-        
         },
         error => {
           console.error('댓글 구독 실패:', error);

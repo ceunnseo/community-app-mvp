@@ -112,7 +112,6 @@ const PostListScreen: React.FC = () => {
       {item.imageURLs && item.imageURLs.length > 0 && (
         <Image source={{ uri: item.imageURLs[0] }} style={styles.postImage} />
       )}
-
     </TouchableOpacity>
   );
 
