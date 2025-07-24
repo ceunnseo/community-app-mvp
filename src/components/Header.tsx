@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/Ionicons';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 
 interface HeaderProps {
   title: string;
@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel="뒤로가기"
           >
-            <Icon name={leftIcon} size={24} color={textColor} />
+            <FontAwesome6 name={leftIcon} size={24} color={textColor} solid />
           </TouchableOpacity>
         )}
 
@@ -74,7 +74,8 @@ const Header: React.FC<HeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`${title} 우측 버튼`}
           >
-            <Icon name={rightIcon} size={24} color={textColor} />
+            <FontAwesome6 name={rightIcon} size={24} color={textColor} solid />
+            
           </TouchableOpacity>
         ) : (
           /* 아이콘이 없더라도 중앙 정렬 유지를 위해 비어 있는 View */

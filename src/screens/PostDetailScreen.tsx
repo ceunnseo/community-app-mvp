@@ -1,4 +1,4 @@
-import React, { useEffect, useState , useLayoutEffect} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,12 +18,13 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Post, Comment } from '../types';
 import { RootStackParamList } from '../../App';
 import Header from '../components/Header';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RouteParams = RouteProp<RootStackParamList, 'PostDetail'>;
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -32,7 +33,7 @@ const PostDetailScreen: React.FC = () => {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { postId } = route.params;
-  
+  const insets = useSafeAreaInsets();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState<string>('');
@@ -41,18 +42,6 @@ const PostDetailScreen: React.FC = () => {
   
   const user = auth().currentUser;
 
-  useLayoutEffect(() => {
-  navigation.setOptions({
-    headerRight: () => (
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={handleMenuPress}
-      >
-        <Icon name="ellipsis-horizontal" size={24} color="#000" />
-      </TouchableOpacity>
-    ),
-  });
-}, [navigation, post, user]);
 const handleMenuPress = () => {
     if (!post) return;
 
@@ -294,7 +283,7 @@ const handleMenuPress = () => {
           <Image source={{ uri: item.authorPhotoURL }} style={styles.commentAuthorPhoto} />
         ) : (
           <View style={styles.commentAuthorPhotoPlaceholder}>
-            <Icon name="person" size={16} color="#999" />
+            <FontAwesome6 name="user" size={16} color="#999" />
           </View>
         )}
         <View style={styles.commentHeaderText}>
@@ -313,6 +302,7 @@ const handleMenuPress = () => {
       </View>
     );
   }
+  
 
   if (!post) {
     return (
@@ -322,12 +312,15 @@ const handleMenuPress = () => {
     );
   }
 
+
+
   return (
+
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header title = "게시글" leftIcon = {'arrow-left'} onLeftPress = {() => navigation.goBack()} rightIcon = {'ellipsis-horizontal'} onRightPress={handleMenuPress}/>
+      <Header title = "게시글" leftIcon = {'less-than'} onLeftPress = {() => navigation.goBack()} rightIcon = {'bars'} onRightPress={handleMenuPress}/>
         
       <FlatList
         data={comments}
@@ -342,7 +335,7 @@ const handleMenuPress = () => {
                   <Image source={{ uri: post.authorPhotoURL }} style={styles.authorPhoto} />
                 ) : (
                   <View style={styles.authorPhotoPlaceholder}>
-                    <Icon name="person" size={24} color="#999" />
+                    <FontAwesome6 name="user" size={24} color="#999" />
                   </View>
                 )}
                 <View style={styles.postHeaderText}>
@@ -370,7 +363,6 @@ const handleMenuPress = () => {
               )}
 
               <View style={styles.postStats}>
-                <Icon name="chatbubble-outline" size={16} color="#666" />
                 <Text style={styles.statText}>{comments.length}개의 댓글</Text>
               </View>
             </View>
@@ -385,7 +377,7 @@ const handleMenuPress = () => {
       />
 
       {/* 댓글 입력 */}
-      <View style={styles.commentInputContainer}>
+      <View style={[styles.commentInputContainer, { paddingBottom: insets.bottom || 10 }]}>
         <TextInput
           style={styles.commentInput}
           placeholder="댓글을 입력하세요..."
@@ -407,7 +399,7 @@ const handleMenuPress = () => {
           {submitting ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Icon name="send" size={20} color="#fff" />
+            <FontAwesome6 name="paper-plane" size={18} color="#2a2a2a" />
           )}
         </TouchableOpacity>
       </View>

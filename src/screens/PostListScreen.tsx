@@ -18,6 +18,7 @@ import { ko } from 'date-fns/locale';
 import { Post } from '../types';
 import { RootStackParamList } from '../../App';
 import Header from '../components/Header';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -95,7 +96,7 @@ const PostListScreen: React.FC = () => {
           <Image source={{ uri: item.authorPhotoURL }} style={styles.authorPhoto} />
         ) : (
           <View style={styles.authorPhotoPlaceholder}>
-            <Icon name="person" size={20} color="#999" />
+            <FontAwesome6 name="user" size={20} color="#999" />
           </View>
         )}
         <View style={styles.postHeaderText}>
@@ -114,7 +115,7 @@ const PostListScreen: React.FC = () => {
 
       <View style={styles.postFooter}>
         <TouchableOpacity style={styles.footerButton}>
-          <Icon name="chatbubble-outline" size={20} color="#666" />
+          <FontAwesome6 name="comment" size={20} color="#666" />
           <Text style={styles.footerButtonText}>{item.commentCount || 0}</Text>
         </TouchableOpacity>
       </View>
@@ -131,7 +132,7 @@ const PostListScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header title = "커뮤니티" rightIcon = {'create-outline'} onRightPress={() => navigation.navigate('CreatePost')}/>
+      <Header title = "커뮤니티" rightIcon = {'pen-to-square'} onRightPress={() => navigation.navigate('CreatePost')}/>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -142,7 +143,7 @@ const PostListScreen: React.FC = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="document-text-outline" size={48} color="#ccc" />
+            <FontAwesome6 name="file-text" size={48} color="#ccc" />
             <Text style={styles.emptyText}>아직 게시글이 없습니다</Text>
             <TouchableOpacity
               style={styles.emptyButton}

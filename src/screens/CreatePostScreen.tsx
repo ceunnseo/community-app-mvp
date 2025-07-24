@@ -212,9 +212,9 @@ const CreatePostScreen: React.FC = () => {
     >
       <Header 
         title={isEditMode ? "게시글 수정" : "새 게시글"} 
-        leftIcon="arrow-left" 
+        leftIcon="less-than"
         onLeftPress={() => navigation.goBack()} 
-        rightIcon="checkmark" 
+        rightIcon="circle-check" 
         onRightPress={handleSubmit}
         rightDisabled={submitting || !content.trim()}
         disableTopInset
@@ -233,39 +233,6 @@ const CreatePostScreen: React.FC = () => {
             autoFocus={!isEditMode}
             editable={!submitting}
           />
-
-          {/* 이미지 섹션 */}
-          <View style={styles.imageSection}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {/* 기존 이미지 (수정 모드에서만) */}
-              {isEditMode && displayedExistingImages.map((url, index) => (
-                <View key={`existing-${index}`} style={styles.imageWrapper}>
-                  <Image source={{ uri: url }} style={styles.imagePreview} />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={() => removeImage(index, true)}
-                    disabled={submitting}
-                  >
-                    <Icon name="close-circle" size={24} color="#FF3B30" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-
-              {/* 새로 추가한 이미지 */}
-              {images.map((uri, index) => (
-                <View key={`new-${index}`} style={styles.imageWrapper}>
-                  <Image source={{ uri }} style={styles.imagePreview} />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={() => removeImage(index, false)}
-                    disabled={submitting}
-                  >
-                    <Icon name="close-circle" size={24} color="#FF3B30" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
         </View>
       </ScrollView>
 
