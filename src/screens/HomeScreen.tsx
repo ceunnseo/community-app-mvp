@@ -11,6 +11,7 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
+import Button from '../components/Button';
 
 type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>;
 
@@ -44,10 +45,11 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         <Text style={styles.userName}>{user?.displayName || '사용자'}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
       </View>
-      
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>로그아웃</Text>
-      </TouchableOpacity>
+      <Button
+        label="로그아웃"
+        onPress={handleLogout}
+        backgroundColor="#DB4437"
+      />
     </View>
   );
 };

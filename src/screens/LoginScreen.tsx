@@ -11,7 +11,7 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
-
+import Button from '../components/Button';
 type LoginScreenProps = StackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<LoginScreenProps> = () => {
@@ -61,21 +61,12 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
     <View style={styles.container}>
       <Text style={styles.title}>환영합니다</Text>
       <Text style={styles.subtitle}>Google 계정으로 로그인하세요</Text>
-      
-      <TouchableOpacity 
-        style={[styles.googleButton, loading && styles.buttonDisabled]} 
+
+      <Button
+        label="Google로 로그인"
         onPress={signInWithGoogle}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#ffffff" />
-        ) : (
-          <>
-            <Text style={styles.googleIcon}>G</Text>
-            <Text style={styles.buttonText}>Google로 로그인</Text>
-          </>
-        )}
-      </TouchableOpacity>
+        backgroundColor="#4285F4"
+      />
     </View>
   );
 };
