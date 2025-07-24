@@ -1,72 +1,64 @@
-import React, { useState } from 'react';
+import React, {  useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import auth from '@react-native-firebase/auth';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 import Button from '../components/Button';
+import { useAuth, AuthError } from '../hooks/useAuth';
+import { statusCodes } from '@react-native-google-signin/google-signin';
+
 type LoginScreenProps = StackScreenProps<RootStackParamList, 'Login'>;
 
-const LoginScreen: React.FC<LoginScreenProps> = () => {
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const signInWithGoogle = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      
-      // 이전 로그인 세션 초기화
-      await GoogleSignin.signOut();
-      
-      // Play Services 확인
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      
-      // Google 로그인
-      const userInfo = await GoogleSignin.signIn();
-      console.log('✅ Google Sign-In 성공:', userInfo.data?.user?.email);
-      
-      // Firebase 인증
-      const googleCredential = auth.GoogleAuthProvider.credential(userInfo.data?.idToken);
-      const userCredential = await auth().signInWithCredential(googleCredential);
-      
-      console.log('✅ Firebase 인증 성공:', userCredential.user.email);
-      // 성공 시 자동으로 HomeScreen으로 이동됨
-      
-    } catch (error: any) {
-      console.error('❌ 로그인 실패:', error);
-      
-      let errorMessage = '로그인 중 오류가 발생했습니다.';
-      
-      if (error.code === 'SIGN_IN_CANCELLED') {
-        errorMessage = '로그인이 취소되었습니다.';
-      } else if (error.code === 'IN_PROGRESS') {
-        errorMessage = '이미 로그인이 진행 중입니다.';
-      } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
-        errorMessage = 'Play Services를 사용할 수 없습니다.';
-      }
-      
-      Alert.alert('로그인 실패', errorMessage);
-    } finally {
-      setLoading(false);
+const messageOf = (err: AuthError): string => {
+  if (err.provider === 'google') {
+    switch (err.code) {
+      case statusCodes.SIGN_IN_CANCELLED:
+        return '로그인이 취소되었습니다.';
+      case statusCodes.IN_PROGRESS:
+        return '이미 로그인이 진행 중입니다.';
+      case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+        return 'Play Services를 사용할 수 없습니다.';
+      default:
+        return 'Google 로그인 중 오류가 발생했습니다.';
     }
-  };
+  }
+  if (err.provider === 'firebase') {
+    if (err.code === 'auth/network-request-failed') {
+      return '네트워크 오류가 발생했습니다.';
+    }
+    return 'Firebase 인증 중 오류가 발생했습니다.';
+  }
+  return err.message || '알 수 없는 오류가 발생했습니다.';
+};
+
+const LoginScreen: React.FC<LoginScreenProps> = () => {
+  const { signIn, loading, error } = useAuth();
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('오류', messageOf(error));
+    }
+  }, [error]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>환영합니다</Text>
       <Text style={styles.subtitle}>Google 계정으로 로그인하세요</Text>
 
-      <Button
-        label="Google로 로그인"
-        onPress={signInWithGoogle}
-        backgroundColor="#4285F4"
-      />
+      {loading ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <Button
+          label="Google로 로그인"
+          onPress={signIn}
+          backgroundColor="#4285F4"
+        />
+      )}
     </View>
   );
 };

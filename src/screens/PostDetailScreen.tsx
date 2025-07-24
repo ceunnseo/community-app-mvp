@@ -1,4 +1,4 @@
-import React, { useEffect, useState , useLayoutEffect} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,12 +18,14 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Post, Comment } from '../types';
 import { RootStackParamList } from '../../App';
 import Header from '../components/Header';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { addListener } from '../utils/listenerManager';
 
 type RouteParams = RouteProp<RootStackParamList, 'PostDetail'>;
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -32,7 +34,7 @@ const PostDetailScreen: React.FC = () => {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { postId } = route.params;
-  
+  const insets = useSafeAreaInsets();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState<string>('');
@@ -41,18 +43,6 @@ const PostDetailScreen: React.FC = () => {
   
   const user = auth().currentUser;
 
-  useLayoutEffect(() => {
-  navigation.setOptions({
-    headerRight: () => (
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={handleMenuPress}
-      >
-        <Icon name="ellipsis-horizontal" size={24} color="#000" />
-      </TouchableOpacity>
-    ),
-  });
-}, [navigation, post, user]);
 const handleMenuPress = () => {
     if (!post) return;
 
@@ -109,10 +99,14 @@ const handleMenuPress = () => {
   };
 
   const handleEdit = () => {
-    Alert.alert('준비 중', '수정 기능은 준비 중입니다.');
-    // TODO: 수정 화면으로 이동
-    // navigation.navigate('EditPost', { postId: post.id });
-  };
+  if (!post) return;
+  
+  // CreatePost 화면으로 이동하면서 수정 모드와 postId 전달
+  navigation.navigate('CreatePost', { 
+    mode: 'edit', 
+    postId: post.id 
+  });
+};
 
   const handleDelete = () => {
     Alert.alert(
@@ -159,34 +153,41 @@ const handleMenuPress = () => {
     );
   };
 
+  const handleShare = () => {
+    Alert.alert('준비 중', '공유 기능은 준비 중입니다.');
+    // TODO: 실제 공유 기능 구현
+  };
 
-  // 게시글 가져오기
+  // 게시글 실시간 구독
   useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const postDoc = await firestore()
-          .collection('posts')
-          .doc(postId)
-          .get();
-
-        if (postDoc.exists) {
-          setPost({
-            id: postDoc.id,
-            ...postDoc.data(),
-          } as Post);
-        } else {
-          Alert.alert('오류', '게시글을 찾을 수 없습니다.');
-          navigation.goBack();
+    console.log('게시글 구독 시작, postId:', postId);
+    
+    const unsubscribe = firestore()
+      .collection('posts')
+      .doc(postId)
+      .onSnapshot(
+        (doc) => {
+          if (doc.exists) {
+            setPost({
+              id: doc.id,
+              ...doc.data(),
+            } as Post);
+            console.log('게시글 업데이트됨');
+          } else {
+            Alert.alert('오류', '게시글을 찾을 수 없습니다.');
+            navigation.goBack();
+          }
+          setLoading(false);
+        },
+        (error) => {
+          console.error('게시글 구독 실패:', error);
+          Alert.alert('오류', '게시글을 불러올 수 없습니다.');
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('게시글 로드 실패:', error);
-        Alert.alert('오류', '게시글을 불러올 수 없습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      );
+    addListener(unsubscribe);
 
-    fetchPost();
+    return () => unsubscribe();
   }, [postId, navigation]);
 
   // 댓글 실시간 구독
@@ -226,11 +227,9 @@ const handleMenuPress = () => {
           console.error('댓글 구독 실패:', error);
         }
       );
+    addListener(unsubscribe);
 
-    return () => {
-      console.log('댓글 구독 해제');
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [postId, post]);
 
   const formatDate = (timestamp: any) => {
@@ -281,7 +280,7 @@ const handleMenuPress = () => {
           <Image source={{ uri: item.authorPhotoURL }} style={styles.commentAuthorPhoto} />
         ) : (
           <View style={styles.commentAuthorPhotoPlaceholder}>
-            <Icon name="person" size={16} color="#999" />
+            <FontAwesome6 name="user" size={16} color="#999" />
           </View>
         )}
         <View style={styles.commentHeaderText}>
@@ -300,6 +299,7 @@ const handleMenuPress = () => {
       </View>
     );
   }
+  
 
   if (!post) {
     return (
@@ -309,12 +309,15 @@ const handleMenuPress = () => {
     );
   }
 
+
+
   return (
+
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header title = "게시글" leftIcon = {'arrow-left'} onLeftPress = {() => navigation.goBack()} rightIcon = {'ellipsis-horizontal'} onRightPress={handleMenuPress}/>
+      <Header title = "게시글" leftIcon = {'less-than'} onLeftPress = {() => navigation.goBack()} rightIcon = {'bars'} onRightPress={handleMenuPress}/>
         
       <FlatList
         data={comments}
@@ -329,7 +332,7 @@ const handleMenuPress = () => {
                   <Image source={{ uri: post.authorPhotoURL }} style={styles.authorPhoto} />
                 ) : (
                   <View style={styles.authorPhotoPlaceholder}>
-                    <Icon name="person" size={24} color="#999" />
+                    <FontAwesome6 name="user" size={24} color="#999" />
                   </View>
                 )}
                 <View style={styles.postHeaderText}>
@@ -357,7 +360,6 @@ const handleMenuPress = () => {
               )}
 
               <View style={styles.postStats}>
-                <Icon name="chatbubble-outline" size={16} color="#666" />
                 <Text style={styles.statText}>{comments.length}개의 댓글</Text>
               </View>
             </View>
@@ -372,7 +374,7 @@ const handleMenuPress = () => {
       />
 
       {/* 댓글 입력 */}
-      <View style={styles.commentInputContainer}>
+      <View style={[styles.commentInputContainer, { paddingBottom: insets.bottom || 10 }]}>
         <TextInput
           style={styles.commentInput}
           placeholder="댓글을 입력하세요..."
@@ -394,7 +396,7 @@ const handleMenuPress = () => {
           {submitting ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Icon name="send" size={20} color="#fff" />
+            <FontAwesome6 name="paper-plane" size={18} color="#2a2a2a" />
           )}
         </TouchableOpacity>
       </View>
@@ -406,6 +408,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  headerButton: {
+    padding: 8,
   },
   loadingContainer: {
     flex: 1,

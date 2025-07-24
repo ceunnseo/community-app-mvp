@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   Image,
@@ -11,15 +10,29 @@ import auth from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Header from '../components/Header';
 import Button from '../components/Button';
+import { clearAllListeners } from '../utils/listenerManager';
+import { useAuth } from '../hooks/useAuth';
+
 
 const ProfileScreen: React.FC = () => {
   const user = auth().currentUser;
+  const { logout } = useAuth();
+
+  const confirmLogout = () => {
+    Alert.alert(
+      '로그아웃',
+      '정말 로그아웃 하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '로그아웃', style: 'destructive', onPress: handleLogout },
+      ],
+      { cancelable: true },
+    );
+  };
 
   const handleLogout = async (): Promise<void> => {
     try {
-      await GoogleSignin.signOut();
-      await auth().signOut();
-      console.log('✅ 로그아웃 성공');
+      await logout();
     } catch (error) {
       console.error('❌ 로그아웃 실패:', error);
       Alert.alert('로그아웃 실패', '로그아웃 중 오류가 발생했습니다.');
@@ -51,7 +64,7 @@ const ProfileScreen: React.FC = () => {
       <View style={styles.menuSection}>
         <Button
           label="로그아웃"
-          onPress={handleLogout}
+          onPress={confirmLogout}
           backgroundColor="#DB4437"
         />
       </View>
