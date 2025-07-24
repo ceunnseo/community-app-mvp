@@ -17,11 +17,16 @@
 ├─ App.tsx              # 최상위 네비게이션 & Provider
 ├─ components/          # 공통 UI
 │  └─ Button.tsx
+│  └─ Header.tsx
 ├─ hooks/
 │  └─ useAuth.ts        # 인증 전용 훅
-└─ screens/
-    ├─ LoginScreen.tsx
-    └─ HomeScreen.tsx
+└─ screens/             #스크린
+│   ├─ LoginScreen.tsx
+│   └─ HomeScreen.tsx
+├─ types/                #firestore에서 사용하는 주요 타입들
+│    └─ HomeScreen.tsx
+└─ utils/                #firestore 리스너
+    └─ listenerManager.ts
 ```
 
 ---
