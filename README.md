@@ -1,97 +1,88 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
-# Getting Started
+## 주요 특징
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+| 구분                            | 설명                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------ |
+| **공통 UI 컴포넌트**                | `Button`, `Header` 등 반복되는 UI를 모듈화하여 일관된 디자인·코드 재사용 실현                  |
+| **훅**                  | Google Sign‑In + Firebase Auth 로직을 하나의 훅으로 캡슐화하여, 화면에서는 함수 호출만으로 로그인/로그아웃·로딩·에러 상태 사용 |
+| **TypeScript 전면 도입**          | 명시적 타입, 타입 가드로 런타임 오류 사전 방지                                                          |
+| **폴더별 책임 분리**                 | `screens/`, `components/`, `hooks/` 로 역할을 세분화                           |
+| **ESLint + Prettier** | 커밋 단계에서 코드 스타일과 린트 자동 검증                                                             |
 
-## Step 1: Start Metro
+---
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 🗂️ 폴더 구조
 
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```text
+├─ App.tsx              # 최상위 네비게이션 & Provider
+├─ components/          # 공통 UI
+│  └─ Button.tsx
+├─ hooks/
+│  └─ useAuth.ts        # 인증 전용 훅
+└─ screens/
+    ├─ LoginScreen.tsx
+    └─ HomeScreen.tsx
 ```
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 🧩 공통 UI 컴포넌트 설계
 
-### Android
+### 1) Button
 
-```sh
-# Using npm
-npm run android
+- **변형(variant)**: `primary`, `secondary`, `danger`를 prop 하나로 선택
+- **접근성**: `accessibilityRole="button"`, `testID` 기본 제공
+- **로딩 상태**: `isLoading` prop → 내부에서 `ActivityIndicator`로 전환
 
-# OR using Yarn
-yarn android
+```tsx
+<Button label="Google로 로그인" onPress={signIn} variant="primary" />
 ```
 
-### iOS
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+---
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## 🔐 `useAuth` 훅 구조
 
-```sh
-bundle install
+| 반환 값       | 타입                               | 용도                                    |
+| ---------- | -------------------------------- | ------------------------------------- |
+| `user`     | `FirebaseAuthTypes.User \| null` | 현재 로그인 사용자 정보                         |
+| `loading`  | `boolean`                        | 로그인/로그아웃 진행 여부                        |
+| `error`    | `AuthError \| null`              | 타입 가드가 적용된 오류 객체                      |
+| `signIn()` | `() => Promise<void>`            | Google Sign‑In → Firebase Auth 콜체인 실행 |
+| `logout()` | `() => Promise<void>`            | Google·Firebase 세션 동시 정리              |
+
+> **타입 가드**로 오류를 `google / firebase / unknown`으로 구분하여, 화면에서는 코드별 메시지 매핑만 담당합니다.
+
+```tsx
+const { signIn, loading, error } = useAuth();
 ```
 
-Then, and every time you update your native dependencies, run:
+---
 
-```sh
-bundle exec pod install
-```
+## 🚀 실행 방법
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+1. **의존성 설치**
+   ```bash
+   yarn install
+   cd ios && pod install   # iOS
+   ```
+2. **Google 서비스 설정**
+   - `google-services.json` / `GoogleService-Info.plist` 추가
+   - `GoogleSignin.configure({ webClientId: '...oauth...' })` (App 시작 시 1회)
+3. **시뮬레이터/디바이스 실행**
+   ```bash
+   yarn android    # 또는
+   yarn ios
+   ```
 
-```sh
-# Using npm
-npm run ios
+---
 
-# OR using Yarn
-yarn ios
-```
+## 🛠️ 기술 스택 & 도구
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+- **React Native CLI 0.80.1**
+- **TypeScript 5.0.4**
+- **Firebase Auth & Firestore**
+- **React Navigation 7**
+- **ESLint + Prettier**
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+> **브랜치 전략**  `main` (배포) ← `dev` (통합) ← feature/hotfix 브랜치
